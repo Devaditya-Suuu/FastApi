@@ -10,6 +10,8 @@ A simple REST API built with FastAPI to demonstrate basic routing concepts inclu
 - Query parameters with default values
 - Path parameters with type validation
 - Optional parameters
+- Request body validation with Pydantic models
+- POST endpoints for creating resources
 
 ## Prerequisites
 
@@ -58,6 +60,7 @@ The server will start at `http://127.0.0.1:8000`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/blog` | Get blogs with optional filters |
+| POST | `/blog` | Create a new blog (see post.py) |
 | GET | `/blog/something` | Static route example |
 | GET | `/blog/{id}` | Get a specific blog by ID |
 | GET | `/blog/{id}/comments` | Get comments for a blog |
@@ -86,7 +89,21 @@ curl http://127.0.0.1:8000/blog/5
 
 # Get comments for blog ID 3
 curl http://127.0.0.1:8000/blog/3/comments
+
+# Create a new blog (POST request)
+curl -X POST "http://127.0.0.1:8000/blog" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My First Blog", "body": "This is the content"}'
 ```
+
+### POST `/blog` Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Blog title |
+| `body` | string | Yes | Blog content |
+| `description` | string | No | Optional description |
+| `published_at` | string | No | Publication date |
 
 ## API Documentation
 
@@ -99,7 +116,8 @@ FastAPI automatically generates interactive API documentation:
 
 ```
 fastapi-env/
-├── main.py          # Main application file with all routes
+├── main.py          # GET endpoints (path params, query params)
+├── post.py          # POST endpoints with Pydantic models
 ├── README.md        # This file
 ├── .gitignore       # Git ignore file
 ├── bin/             # Virtual environment binaries
@@ -136,9 +154,30 @@ def get_blogs(sort: Optional[str] = None):
 ### 4. Route Order Matters
 Static routes (like `/blog/something`) should be defined **before** dynamic routes (like `/blog/{id}`) to avoid conflicts.
 
-## License
+### 5. POST Requests with Pydantic Models
+```python
+from pydantic import BaseModel
+from typing import Optional
 
-MIT
+class Blog(BaseModel):
+    title: str
+    description: Optional[str] = None
+    body: str
+
+@app.post('/blog')
+async def create_blog(blog: Blog):
+    return {'data': f'Blog created with title: {blog.title}'}
+```
+
+## Running Different Apps
+
+```bash
+# Run main.py (GET endpoints)
+python -m uvicorn main:app --reload
+
+# Run post.py (POST endpoints)
+python -m uvicorn post:app --reload
+```
 
 ## Author
 
